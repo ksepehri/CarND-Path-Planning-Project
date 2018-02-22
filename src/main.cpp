@@ -170,7 +170,7 @@ bool carInLane(int lane, int buffer,double cur_s,double check_d,double check_vx,
     bool carInLane = false;
     int cur_d = 2+lane*4;
     
-    if(check_d<(cur_d+2) && cur_d>(check_d-2))
+    if(check_d<(cur_d+2) && check_d>(cur_d-2))
     {
         double check_speed = sqrt(pow(check_vx,2)+pow(check_vy,2));
         
@@ -183,6 +183,26 @@ bool carInLane(int lane, int buffer,double cur_s,double check_d,double check_vx,
     }
     
     return carInLane;
+}
+
+template <typename sf>
+bool canChangeLane(int lane, int buffer,double cur_s, sf sensor_fusion, int prev_size) {
+    bool canChangeLane = true;
+    for(int i=0; i<sensor_fusion.size(); i++)
+    {
+        int id = sensor_fusion[i][0];
+        float d = sensor_fusion[i][6];
+        double vx = sensor_fusion[i][3];
+        double vy = sensor_fusion[i][4];
+        double check_car_s = sensor_fusion[i][5];
+        
+        if (carInLane(lane, buffer, cur_s, d, vx, vy, check_car_s, prev_size))
+        {
+            canChangeLane = false;
+        }
+    }
+    
+    return canChangeLane;
 }
 
 int main() {
@@ -227,7 +247,7 @@ int main() {
     int cur_d = 2+4*lane;
     const double max_vel = 49.5;
     double ref_vel = 0;
-    int buffer = 30;
+    double buffer = 30;
     double vel_change = .224;
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&max_vel,&ref_vel,&cur_d,&buffer,&vel_change](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -279,7 +299,7 @@ int main() {
             for(int i=0; i<sensor_fusion.size(); i++)
             {
                 //car in our lane
-                auto check_car = sensor_fusion[i];
+                int id = sensor_fusion[i][0];
                 float d = sensor_fusion[i][6];
                 double vx = sensor_fusion[i][3];
                 double vy = sensor_fusion[i][4];
@@ -287,35 +307,41 @@ int main() {
                 
                 if(carInLane(lane, buffer, car_s, d, vx, vy, check_car_s, prev_size))
                 {
-                    std::cout << "Car too close in lane " << lane << std::endl;
+                    std::cout << "car " << id << " too close in lane " << lane << std::endl;
                     
                     too_close=true;
+                    
+                    double temp_buffer = buffer;
+                    buffer = (car_speed/max_vel)*buffer;
+                    
                     if(lane==0)
                     {
-                        std::cout << "*Car too close in lane " << 0 << std::endl;
-                        if(!carInLane(1, buffer, car_s, d, vx, vy, check_car_s, prev_size))
+                        if(canChangeLane(1, buffer, car_s, sensor_fusion, prev_size))
                         {
                             lane=1;
+                            std::cout << "CHANGING TO LANE " << lane << std::endl;
                         }
                         
                     } else if(lane==1) {
-                        std::cout << "*Car too close in lane " << 1 << std::endl;
-                        if(!carInLane(0, buffer, car_s, d, vx, vy, check_car_s, prev_size))
-                        {
-                            lane=0;
-                        } else if(!carInLane(2, buffer, car_s, d, vx, vy, check_car_s, prev_size))
+                        if(canChangeLane(2, buffer, car_s, sensor_fusion, prev_size))
                         {
                             lane=2;
+                            std::cout << "CHANGING TO LANE " << lane << std::endl;
+                        } else if(canChangeLane(0, buffer, car_s, sensor_fusion, prev_size))
+                        {
+                            lane=0;
+                            std::cout << "CHANGING TO LANE " << lane << std::endl;
                         }
                     } else if (lane==2)
                     {
-                        std::cout << "*Car too close in lane " << 2 << std::endl;
-                        if(!carInLane(1, buffer, car_s, d, vx, vy, check_car_s, prev_size))
+                        if(canChangeLane(1, buffer, car_s, sensor_fusion, prev_size))
                         {
                             lane=1;
+                            std::cout << "CHANGING TO LANE " << lane << std::endl;
                         }
                     }
                     cur_d = 2+4*lane;
+                    buffer = temp_buffer;
                 }
                 
 //                if(d<(cur_d+2) && d>(cur_d-2))
