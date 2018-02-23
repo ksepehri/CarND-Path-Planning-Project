@@ -15,6 +15,7 @@ I then pull 3 waypoints representing points 30,60,90 meters from the car's curre
 
 ### Lane Change Methodology
 || lane 0 | lane 1 | lane 2 |
+
 There are 3 valid lanes that our car can drive in. The car is set to drive up to the speed limit and stay in it's lane unless it finds slower traffic in front of it. If there's a car within a 30m buffer of our car then we slow down gradually to keep from colliding. When we slow down we look at other lanes to see if we can change lanes to keep driving at the speed limit. For this I've setup functions carInLane and canChangeLane which help with this logic. 
 
 #### carInLane
@@ -26,7 +27,7 @@ For a given lane this checks sensor_fusion data for all cars and returns false i
 #### Lane change logic
 If we're in lane 0 we check if we can move to lane 1. If we're in lane 1 we check lane 2, if it's open we move there, if it's not we check lane 0 and move there if possible. If we're in lane 2 we check if we can move to lane 1.
 
-One additional feature I added is as our car slows down due to slow traffic I reduce the minimum buffer needed to change lanes. The logic is (car_speed/speed_limit)\*buffer. My thinking here is as the cars are moving slower it's okay to try to change lanes with a smaller buffer.
+One additional feature I added is as our car slows down due to slow traffic I reduce the minimum buffer needed to change lanes. The logic is (car speed/speed limit)\*buffer. My thinking here is as the cars are moving slower it's okay to try to change lanes with a smaller buffer.
    
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
