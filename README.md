@@ -7,9 +7,26 @@ In this project my goal is to safely navigate around a virtual highway with othe
 The car is able to drive at least 4.32 miles without incident. The car never drives faster than the speed limit. Max Acceleration and Jerk are not Exceeded using gradual velocity changes and smooth lane changes. The car stays in its lane, except for the time between changing lanes. The car is able to smoothly change lanes when it makes sense to do so, such as when behind a slower moving car and an adjacent lane is clear of other traffic.
 
 ### Generating Paths
-Paths are generated using data from localization, waypoints and sensor fusion. I first set up a couple reference points either from the last positions of the car or from a previous path. I then pull 3 waypoints representing points 30,60,90 meters from the car's current location. I convert to XY from Frenet and shift to car local coordinates to make the math easier. I also use the spline library to interpolate points between the known waypoints. With spline once you have set your target X it's easy to get the correspoinding equadistant Y values keeping the necessary velocity. Once all points are generated I rotate back into world coordinates and send to the simulator.
+Paths are generated using data from localization, waypoints and sensor fusion. 
+#### Initial points
+I first set up a couple reference points either from the last positions of the car or from a previous path. 
+#### Waypoints
+I then pull 3 waypoints representing points 30,60,90 meters from the car's current location. I convert to XY from Frenet and shift to car local coordinates to make the math easier. I also use the spline library to interpolate points between the known waypoints. With spline once you have set your target X it's easy to get the correspoinding equadistant Y values keeping the necessary velocity. Once all points are generated I rotate back into world coordinates and send to the simulator.
 
+### Lane Change Methodology
+|| lane 0 | lane 1 | lane 2 |
+There are 3 valid lanes that our car can drive in. The car is set to drive up to the speed limit and stay in it's lane unless it finds slower traffic in front of it. If there's a car within a 30m buffer of our car then we slow down gradually to keep from colliding. When we slow down we look at other lanes to see if we can change lanes to keep driving at the speed limit. For this I've setup functions carInLane and canChangeLane which help with this logic. 
 
+#### carInLane
+Uses the sensor_fusion data for each car and returns true if they are in our lane and close to our car.
+
+#### canChangeLane
+For a given lane this checks sensor_fusion data for all cars and returns false if there's a car in that lane within our buffer zone.
+
+#### Lane change logic
+If we're in lane 0 we check if we can move to lane 1. If we're in lane 1 we check lane 2, if it's open we move there, if it's not we check lane 0 and move there if possible. If we're in lane 2 we check if we can move to lane 1.
+
+One additional feature I added is as our car slows down due to slow traffic I reduce the minimum buffer needed to change lanes. The logic is (car_speed/speed_limit)\*buffer. My thinking here is as the cars are moving slower it's okay to try to change lanes with a smaller buffer.
    
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
