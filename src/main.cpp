@@ -187,6 +187,7 @@ bool carInLane(int lane, int buffer,double cur_s,double check_d,double check_vx,
 
 template <typename sf>
 bool canChangeLane(int lane, int buffer,double cur_s, sf sensor_fusion, int prev_size) {
+    std::cout << "attempting change to lane " << lane << std::endl;
     bool canChangeLane = true;
     for(int i=0; i<sensor_fusion.size(); i++)
     {
@@ -198,6 +199,7 @@ bool canChangeLane(int lane, int buffer,double cur_s, sf sensor_fusion, int prev
         
         if (carInLane(lane, buffer, cur_s, d, vx, vy, check_car_s, prev_size))
         {
+            std::cout << "attempt failed: car " << id << " too close in lane " << lane << std::endl;
             canChangeLane = false;
         }
     }
