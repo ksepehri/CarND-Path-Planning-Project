@@ -196,10 +196,19 @@ bool canChangeLane(int lane, int buffer,double cur_s, sf sensor_fusion, int prev
         double vx = sensor_fusion[i][3];
         double vy = sensor_fusion[i][4];
         double check_car_s = sensor_fusion[i][5];
+        int cur_d = 2+lane*4;
+        
+        double check_speed = sqrt(pow(vx,2)+pow(vy,2));
+        
+        check_car_s += ((double)prev_size*0.02*check_speed);
         
         if (carInLane(lane, buffer, cur_s, d, vx, vy, check_car_s, prev_size))
         {
             std::cout << "attempt failed: car " << id << " too close in lane " << lane << std::endl;
+            canChangeLane = false;
+        } else if((d<(cur_d+2) && d>(cur_d-2)) && ((check_car_s-cur_s) < buffer) && (check_car_s-cur_s) >= 10)
+        {
+            std::cout << "**attempt failed: car " << id << " too close in lane " << lane << std::endl;
             canChangeLane = false;
         }
     }
@@ -314,7 +323,7 @@ int main() {
                     too_close=true;
                     
                     double temp_buffer = buffer;
-                    buffer = (car_speed/max_vel)*buffer;
+                    buffer += 5;
                     
                     if(lane==0)
                     {
